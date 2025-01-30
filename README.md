@@ -13,12 +13,13 @@ This branch allows developers and contributors to test new functionality and rep
 ## Installation Instructions:
 To get started with the development version of the app, clone the repository using the following command:
 
+```bash
 git clone https://github.com/charviis/android-todo.git
-
+```
 Once cloned, switch to the development branch:
-
+```bash
 git checkout development
-
+```
 After switching to the development branch, open the project in Android Studio. You can build and run the project on an emulator or real device. Keep in mind that this branch may contain experimental features that are not yet fully tested.
 
 ## Usage Instructions:
