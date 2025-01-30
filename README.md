@@ -9,11 +9,13 @@ The app is built using Kotlin, which provides a modern and efficient approach to
 
 ## Installation Instructions:
 To get started with the Android To-Do List app, you can clone the repository using the following command:
-
+```
 git clone https://github.com/charviis/android-todo.git
-
+```
 Once you have cloned the repository, switch to the stable release branch to access the latest stable version:
-
+```
+git checkout stable
+```
 Next, open the project in Android Studio. You can do this by selecting "Open an Existing Project" and navigating to the folder where you cloned the repository. After the project is loaded, you can build and run the app on either an emulator or a real Android device.
 
 ## Usage Instructions:
