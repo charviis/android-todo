@@ -324,3 +324,4 @@ fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: (
 
 // Data class Quadruple used for four properties
 data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+// End of MainActivity.kt
