@@ -1,24 +1,25 @@
 package com.example.myapplication
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import android.app.DatePickerDialog
-import androidx.compose.foundation.border
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import java.util.*
@@ -35,10 +36,12 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ToDoListApp() {
     var taskName by remember { mutableStateOf(TextFieldValue("")) }
+    var taskNote by remember { mutableStateOf(TextFieldValue("")) }
     var taskDate by remember { mutableStateOf("No Date Selected") }
+    var taskTime by remember { mutableStateOf("No Time Selected") }
     val context = LocalContext.current
-    val taskList = remember { mutableStateListOf<Pair<String, String>>() }
-    var editingTask by remember { mutableStateOf<Pair<String, String>?>(null) }
+    val taskList = remember { mutableStateListOf<Quadruple<String, String, String, String>>() }
+    var editingTask by remember { mutableStateOf<Quadruple<String, String, String, String>?>(null) }
 
     val insets = with(LocalDensity.current) {
         val rootView = LocalView.current
@@ -69,7 +72,29 @@ fun ToDoListApp() {
                     modifier = Modifier.padding(8.dp)
                 ) {
                     if (taskName.text.isEmpty()) {
-                        Text("Enter Task Name", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                        Text("Enter task name", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                    }
+                    innerTextField()
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Note input field
+        BasicTextField(
+            value = taskNote,
+            onValueChange = { taskNote = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+                .border(1.dp, MaterialTheme.colorScheme.primary),
+            decorationBox = { innerTextField ->
+                Row(
+                    modifier = Modifier.padding(8.dp)
+                ) {
+                    if (taskNote.text.isEmpty()) {
+                        Text("Enter task note", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
                     }
                     innerTextField()
                 }
@@ -89,24 +114,39 @@ fun ToDoListApp() {
                 context,
                 { _, selectedYear, selectedMonth, selectedDay ->
                     taskDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+
+                    // Time picker immediately after date selection
+                    TimePickerDialog(
+                        context,
+                        { _, selectedHour, selectedMinute ->
+                            taskTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    ).show()
+
                 },
                 year, month, day
             ).show()
         }) {
-            Text("Select Date")
+            Text("Select Date & Time")
         }
 
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = "Selected Date: $taskDate")
+        Text(text = "Selected Time: $taskTime")
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Add task button
         Button(onClick = {
-            if (taskName.text.isNotBlank() && taskDate != "No Date Selected") {
-                taskList.add(taskName.text to taskDate)
+            if (taskName.text.isNotBlank() && taskDate != "No Date Selected" && taskTime != "No Time Selected") {
+                taskList.add(Quadruple(taskName.text, taskDate, taskTime, taskNote.text))
                 taskName = TextFieldValue("")
+                taskNote = TextFieldValue("")
                 taskDate = "No Date Selected"
+                taskTime = "No Time Selected"
             }
         }) {
             Text("Add Task")
@@ -120,7 +160,7 @@ fun ToDoListApp() {
 
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
             items(taskList) { task ->
-                TaskItem(taskName = task.first, taskDate = task.second, onEdit = {
+                TaskItem(taskName = task.first, taskDate = task.second, taskTime = task.third, taskNote = task.fourth, onEdit = {
                     editingTask = task
                 }) {
                     taskList.remove(task)
@@ -146,7 +186,7 @@ fun ToDoListApp() {
 }
 
 @Composable
-fun TaskItem(taskName: String, taskDate: String, onEdit: () -> Unit, onRemove: () -> Unit) {
+fun TaskItem(taskName: String, taskDate: String, taskTime: String, taskNote: String, onEdit: () -> Unit, onRemove: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -161,7 +201,10 @@ fun TaskItem(taskName: String, taskDate: String, onEdit: () -> Unit, onRemove: (
         ) {
             Column {
                 Text(text = taskName)
-                Text(text = taskDate)
+                Text(text = "$taskDate at $taskTime")
+                if (taskNote.isNotEmpty()) {
+                    Text(text = "Note: $taskNote")
+                }
             }
             Row {
                 Button(onClick = { onEdit() }) {
@@ -177,9 +220,11 @@ fun TaskItem(taskName: String, taskDate: String, onEdit: () -> Unit, onRemove: (
 }
 
 @Composable
-fun EditTaskDialog(task: Pair<String, String>, onDismiss: () -> Unit, onSave: (Pair<String, String>) -> Unit) {
+fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: () -> Unit, onSave: (Quadruple<String, String, String, String>) -> Unit) {
     var taskName by remember { mutableStateOf(TextFieldValue(task.first)) }
     var taskDate by remember { mutableStateOf(task.second) }
+    var taskTime by remember { mutableStateOf(task.third) }
+    var taskNote by remember { mutableStateOf(TextFieldValue(task.fourth)) }
     val context = LocalContext.current
 
     AlertDialog(
@@ -199,7 +244,28 @@ fun EditTaskDialog(task: Pair<String, String>, onDismiss: () -> Unit, onSave: (P
                             modifier = Modifier.padding(8.dp)
                         ) {
                             if (taskName.text.isEmpty()) {
-                                Text("Enter Task Name", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                                Text("Enter task name", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
+                            }
+                            innerTextField()
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                BasicTextField(
+                    value = taskNote,
+                    onValueChange = { taskNote = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .border(1.dp, MaterialTheme.colorScheme.primary),
+                    decorationBox = { innerTextField ->
+                        Row(
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            if (taskNote.text.isEmpty()) {
+                                Text("Enter task note", color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f))
                             }
                             innerTextField()
                         }
@@ -218,20 +284,32 @@ fun EditTaskDialog(task: Pair<String, String>, onDismiss: () -> Unit, onSave: (P
                         context,
                         { _, selectedYear, selectedMonth, selectedDay ->
                             taskDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+
+                            TimePickerDialog(
+                                context,
+                                { _, selectedHour, selectedMinute ->
+                                    taskTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                                },
+                                calendar.get(Calendar.HOUR_OF_DAY),
+                                calendar.get(Calendar.MINUTE),
+                                true
+                            ).show()
+
                         },
                         year, month, day
                     ).show()
                 }) {
-                    Text("Select Date")
+                    Text("Select Date & Time")
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(text = "Selected Date: $taskDate")
+                Text(text = "Selected Time: $taskTime")
             }
         },
         confirmButton = {
             Button(onClick = {
-                onSave(taskName.text to taskDate)
+                onSave(Quadruple(taskName.text, taskDate, taskTime, taskNote.text))
             }) {
                 Text("Save")
             }
@@ -243,3 +321,6 @@ fun EditTaskDialog(task: Pair<String, String>, onDismiss: () -> Unit, onSave: (P
         }
     )
 }
+
+// Data class Quadruple used for four properties
+data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
