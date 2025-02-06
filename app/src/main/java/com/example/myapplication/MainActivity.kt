@@ -1,5 +1,6 @@
 package com.example.myapplication
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.os.Bundle
@@ -263,6 +264,7 @@ fun TaskItem(taskName: String, taskDate: String, taskTime: String, taskNote: Str
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: () -> Unit, onSave: (Quadruple<String, String, String, String>) -> Unit, textColor: Color) {
     var taskName by remember { mutableStateOf(TextFieldValue(task.first)) }
