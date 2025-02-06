@@ -62,6 +62,7 @@ fun ToDoListApp() {
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun ToDoListContent(textColor: Color) {
     var taskName by remember { mutableStateOf(TextFieldValue("")) }
