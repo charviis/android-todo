@@ -63,14 +63,14 @@ fun ToDoListApp() {
                 )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            ToDoListContent(textColor, placeholderColor)
+            ToDoListContent(textColor, placeholderColor, isDarkMode)
         }
     }
 }
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun ToDoListContent(textColor: Color, placeholderColor: Color) {
+fun ToDoListContent(textColor: Color, placeholderColor: Color, isDarkMode: Boolean) {
     var taskName by remember { mutableStateOf(TextFieldValue("")) }
     var taskNote by remember { mutableStateOf(TextFieldValue("")) }
     var taskDate by remember { mutableStateOf("") }
@@ -231,6 +231,7 @@ fun ToDoListContent(textColor: Color, placeholderColor: Color) {
     }
 
     if (showSnackbar) {
+        val isDarkMode = false
         Snackbar(
             action = {
                 Button(
