@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.myapplication.ui.theme.*
 import java.util.*
 
 class MainActivity : ComponentActivity() {
@@ -35,8 +36,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun ToDoListApp() {
     var isDarkMode by remember { mutableStateOf(false) }
-    val backgroundColor = if (isDarkMode) Color(0xFF121212) else Color(0xFFFFFFFF)
-    val textColor = if (isDarkMode) Color(0xFFFFFFFF) else Color(0xFF000000)
+    val backgroundColor = if (isDarkMode) BackgroundColorDark else BackgroundColorLight
+    val textColor = if (isDarkMode) TextColorDark else TextColorLight
+    val placeholderColor = if (isDarkMode) TextColorDark.copy(alpha = 0.5f) else TextColorLight.copy(alpha = 0.5f)
 
     MaterialTheme(
         colorScheme = if (isDarkMode) darkColorScheme() else lightColorScheme()
@@ -54,17 +56,21 @@ fun ToDoListApp() {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "To-Do", style = MaterialTheme.typography.headlineMedium, color = textColor)
-                Switch(checked = isDarkMode, onCheckedChange = { isDarkMode = it })
+                Switch(
+                    checked = isDarkMode,
+                    onCheckedChange = { isDarkMode = it },
+                    colors = SwitchDefaults.colors(checkedThumbColor = PrimaryColor)
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
-            ToDoListContent(textColor)
+            ToDoListContent(textColor, placeholderColor)
         }
     }
 }
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun ToDoListContent(textColor: Color) {
+fun ToDoListContent(textColor: Color, placeholderColor: Color) {
     var taskName by remember { mutableStateOf(TextFieldValue("")) }
     var taskNote by remember { mutableStateOf(TextFieldValue("")) }
     var taskDate by remember { mutableStateOf("") }
@@ -81,14 +87,14 @@ fun ToDoListContent(textColor: Color) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .border(1.dp, MaterialTheme.colorScheme.primary),
+            .border(1.dp, PrimaryColor),
         textStyle = LocalTextStyle.current.copy(color = textColor),
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier.padding(8.dp)
             ) {
                 if (taskName.text.isEmpty()) {
-                    Text("Enter task name", color = textColor.copy(alpha = 0.5f))
+                    Text("Enter task name", color = placeholderColor)
                 }
                 innerTextField()
             }
@@ -103,14 +109,14 @@ fun ToDoListContent(textColor: Color) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .border(1.dp, MaterialTheme.colorScheme.primary),
+            .border(1.dp, PrimaryColor),
         textStyle = LocalTextStyle.current.copy(color = textColor),
         decorationBox = { innerTextField ->
             Row(
                 modifier = Modifier.padding(8.dp)
             ) {
                 if (taskNote.text.isEmpty()) {
-                    Text("Enter task note", color = textColor.copy(alpha = 0.5f))
+                    Text("Enter task note", color = placeholderColor)
                 }
                 innerTextField()
             }
@@ -119,31 +125,34 @@ fun ToDoListContent(textColor: Color) {
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    Button(onClick = {
-        val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
+    Button(
+        onClick = {
+            val calendar = Calendar.getInstance()
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-        DatePickerDialog(
-            context,
-            { _, selectedYear, selectedMonth, selectedDay ->
-                taskDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+            DatePickerDialog(
+                context,
+                { _, selectedYear, selectedMonth, selectedDay ->
+                    taskDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
 
-                TimePickerDialog(
-                    context,
-                    { _, selectedHour, selectedMinute ->
-                        taskTime = String.format("%02d:%02d", selectedHour, selectedMinute)
-                    },
-                    calendar.get(Calendar.HOUR_OF_DAY),
-                    calendar.get(Calendar.MINUTE),
-                    true
-                ).show()
+                    TimePickerDialog(
+                        context,
+                        { _, selectedHour, selectedMinute ->
+                            taskTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                        },
+                        calendar.get(Calendar.HOUR_OF_DAY),
+                        calendar.get(Calendar.MINUTE),
+                        true
+                    ).show()
 
-            },
-            year, month, day
-        ).show()
-    }) {
+                },
+                year, month, day
+            ).show()
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+    ) {
         Text("Select Date & Time: $taskDate $taskTime", color = textColor)
     }
 
@@ -157,33 +166,36 @@ fun ToDoListContent(textColor: Color) {
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    Button(onClick = {
-        when {
-            taskName.text.isBlank() -> {
-                snackbarMessage = "Please enter a task name"
-                showSnackbar = true
+    Button(
+        onClick = {
+            when {
+                taskName.text.isBlank() -> {
+                    snackbarMessage = "Please enter a task name"
+                    showSnackbar = true
+                }
+                taskNote.text.isBlank() -> {
+                    snackbarMessage = "Please enter a task note"
+                    showSnackbar = true
+                }
+                taskDate.isEmpty() -> {
+                    snackbarMessage = "Please select a date"
+                    showSnackbar = true
+                }
+                taskTime.isEmpty() -> {
+                    snackbarMessage = "Please select a time"
+                    showSnackbar = true
+                }
+                else -> {
+                    taskList.add(Quadruple(taskName.text, taskDate, taskTime, taskNote.text))
+                    taskName = TextFieldValue("")
+                    taskNote = TextFieldValue("")
+                    taskDate = ""
+                    taskTime = ""
+                }
             }
-            taskNote.text.isBlank() -> {
-                snackbarMessage = "Please enter a task note"
-                showSnackbar = true
-            }
-            taskDate.isEmpty() -> {
-                snackbarMessage = "Please select a date"
-                showSnackbar = true
-            }
-            taskTime.isEmpty() -> {
-                snackbarMessage = "Please select a time"
-                showSnackbar = true
-            }
-            else -> {
-                taskList.add(Quadruple(taskName.text, taskDate, taskTime, taskNote.text))
-                taskName = TextFieldValue("")
-                taskNote = TextFieldValue("")
-                taskDate = ""
-                taskTime = ""
-            }
-        }
-    }) {
+        },
+        colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+    ) {
         Text("Add Task", color = textColor)
     }
 
@@ -213,18 +225,23 @@ fun ToDoListContent(textColor: Color) {
                 }
                 editingTask = null
             },
-            textColor = textColor
+            textColor = textColor,
+            placeholderColor = placeholderColor
         )
     }
 
     if (showSnackbar) {
         Snackbar(
             action = {
-                Button(onClick = { showSnackbar = false }) {
+                Button(
+                    onClick = { showSnackbar = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                ) {
                     Text("Dismiss", color = textColor)
                 }
             },
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
+            containerColor = if (isDarkMode) Color.DarkGray else Color.LightGray
         ) {
             Text(snackbarMessage, color = textColor)
         }
@@ -254,10 +271,17 @@ fun TaskItem(taskName: String, taskDate: String, taskTime: String, taskNote: Str
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End
             ) {
-                Button(onClick = { onEdit() }, modifier = Modifier.padding(end = 8.dp)) {
+                Button(
+                    onClick = { onEdit() },
+                    modifier = Modifier.padding(end = 8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                ) {
                     Text("Edit", color = textColor)
                 }
-                Button(onClick = { onRemove() }) {
+                Button(
+                    onClick = { onRemove() },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                ) {
                     Text("Remove", color = textColor)
                 }
             }
@@ -267,7 +291,7 @@ fun TaskItem(taskName: String, taskDate: String, taskTime: String, taskNote: Str
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: () -> Unit, onSave: (Quadruple<String, String, String, String>) -> Unit, textColor: Color) {
+fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: () -> Unit, onSave: (Quadruple<String, String, String, String>) -> Unit, textColor: Color, placeholderColor: Color) {
     var taskName by remember { mutableStateOf(TextFieldValue(task.first)) }
     var taskDate by remember { mutableStateOf(task.second) }
     var taskTime by remember { mutableStateOf(task.third) }
@@ -285,14 +309,14 @@ fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: (
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.primary),
+                        .border(1.dp, PrimaryColor),
                     textStyle = LocalTextStyle.current.copy(color = textColor),
                     decorationBox = { innerTextField ->
                         Row(
                             modifier = Modifier.padding(8.dp)
                         ) {
                             if (taskName.text.isEmpty()) {
-                                Text("Enter task name", color = textColor.copy(alpha = 0.5f))
+                                Text("Enter task name", color = placeholderColor)
                             }
                             innerTextField()
                         }
@@ -307,14 +331,14 @@ fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: (
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
-                        .border(1.dp, MaterialTheme.colorScheme.primary),
+                        .border(1.dp, PrimaryColor),
                     textStyle = LocalTextStyle.current.copy(color = textColor),
                     decorationBox = { innerTextField ->
                         Row(
                             modifier = Modifier.padding(8.dp)
                         ) {
                             if (taskNote.text.isEmpty()) {
-                                Text("Enter task note", color = textColor.copy(alpha = 0.5f))
+                                Text("Enter task note", color = placeholderColor)
                             }
                             innerTextField()
                         }
@@ -323,31 +347,34 @@ fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: (
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = {
-                    val calendar = Calendar.getInstance()
-                    val year = calendar.get(Calendar.YEAR)
-                    val month = calendar.get(Calendar.MONTH)
-                    val day = calendar.get(Calendar.DAY_OF_MONTH)
+                Button(
+                    onClick = {
+                        val calendar = Calendar.getInstance()
+                        val year = calendar.get(Calendar.YEAR)
+                        val month = calendar.get(Calendar.MONTH)
+                        val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-                    DatePickerDialog(
-                        context,
-                        { _, selectedYear, selectedMonth, selectedDay ->
-                            taskDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+                        DatePickerDialog(
+                            context,
+                            { _, selectedYear, selectedMonth, selectedDay ->
+                                taskDate = "$selectedDay/${selectedMonth + 1}/$selectedYear"
 
-                            TimePickerDialog(
-                                context,
-                                { _, selectedHour, selectedMinute ->
-                                    taskTime = String.format("%02d:%02d", selectedHour, selectedMinute)
-                                },
-                                calendar.get(Calendar.HOUR_OF_DAY),
-                                calendar.get(Calendar.MINUTE),
-                                true
-                            ).show()
+                                TimePickerDialog(
+                                    context,
+                                    { _, selectedHour, selectedMinute ->
+                                        taskTime = String.format("%02d:%02d", selectedHour, selectedMinute)
+                                    },
+                                    calendar.get(Calendar.HOUR_OF_DAY),
+                                    calendar.get(Calendar.MINUTE),
+                                    true
+                                ).show()
 
-                        },
-                        year, month, day
-                    ).show()
-                }) {
+                            },
+                            year, month, day
+                        ).show()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                ) {
                     Text("Select Date & Time", color = textColor)
                 }
 
@@ -361,14 +388,20 @@ fun EditTaskDialog(task: Quadruple<String, String, String, String>, onDismiss: (
             }
         },
         confirmButton = {
-            Button(onClick = {
-                onSave(Quadruple(taskName.text, taskDate, taskTime, taskNote.text))
-            }) {
+            Button(
+                onClick = {
+                    onSave(Quadruple(taskName.text, taskDate, taskTime, taskNote.text))
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+            ) {
                 Text("Save", color = textColor)
             }
         },
         dismissButton = {
-            Button(onClick = onDismiss) {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+            ) {
                 Text("Cancel", color = textColor)
             }
         }
